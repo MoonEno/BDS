@@ -13,8 +13,8 @@ import bds.portal.com.constants.PortalConstants;
 
 /**
  * Unilock 연동
- * 
- * @author openit
+ *
+ * @author
  * @created 2017. 11. 1.
  */
 public final class UnilockUtils {

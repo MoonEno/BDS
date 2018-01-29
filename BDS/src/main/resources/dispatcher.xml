@@ -11,7 +11,7 @@
         http://www.springframework.org/schema/mvc
         http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd">
 
-    <context:component-scan base-package="shilla.portal.biz">
+    <context:component-scan base-package="bds.portal.biz">
         <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller" />
         <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Service" />
         <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Repository" />
@@ -25,7 +25,7 @@
             <mvc:exclude-mapping path="/images/**"/>
             <mvc:exclude-mapping path="/theme/**"/>
             <mvc:exclude-mapping path="/favicon.ico"/>
-            <bean class="shilla.portal.com.interceptor.PortalInterceptor" />
+            <bean class="bds.portal.com.interceptor.PortalInterceptor" />
         </mvc:interceptor>
     </mvc:interceptors>
 
@@ -35,14 +35,14 @@
 
     <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
         <property name="order" value="1" />
-        <property name="prefix" value="/WEB-INF/jsp/" />
+        <property name="prefix" value="/WEB-INF/view/" />
         <property name="suffix" value=".jsp" />
     </bean>
     
     <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
         <property name="customArgumentResolvers">
             <list>
-                <bean class="shilla.portal.com.resolver.SessResolver" />
+                <bean class="bds.portal.com.resolver.SessResolver" />
             </list>
         </property>
         <property name="messageConverters">

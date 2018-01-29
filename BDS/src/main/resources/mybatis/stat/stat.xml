@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="stat">
+
+     <select id="selectUserStatCount" resultType="int">
+     /* 사용자 통계 조회 카운트*/
+     SELECT 
+            COUNT(A.STAT_DATE)
+       FROM (
+             SELECT
+                  <if test="dateTypeChoice == 'day'">
+                    DATE_FORMAT(STR_TO_DATE(STAT_DT, '%Y%m%d%H'), '%Y-%m-%d') as STAT_DATE,
+                    SUM(USE_CNT) as USE_CNT,
+                  </if>
+                  <if test="dateTypeChoice == 'month'">
+                    DATE_FORMAT(STR_TO_DATE(STAT_DT, '%Y%m%d%H'), '%Y-%m') as STAT_DATE,
+                    SUM(USE_CNT) as USE_CNT,
+                  </if>
+                  <if test="dateTypeChoice == 'time'">
+                    DATE_FORMAT(STR_TO_DATE(STAT_DT, '%Y%m%d%H'), '%Y-%m-%d %H') as STAT_DATE,
+                    USE_CNT,
+                  </if>
+                    SEX,
+                    AGE
+               FROM USER_USE_STAT
+              WHERE STAT_DT LIKE CONCAT(#{startDt},'%')
+              <if test="sex != null and sex != ''">
+                AND SEX = #{sex}
+              </if>
+              <if test="age != null and age != ''">
+                AND AGE = #{age}
+              </if>
+              <if test = "dateTypeChoice == 'day' or dateTypeChoice == 'month'">
+              GROUP BY STAT_DATE, AGE, SEX
+              </if>
+              ) A
+    </select>
+
+    <select id="selectUserStat" resultType="hashmap">
+     /* 사용자 통계 조회*/
+     SELECT
+      <choose>
+          <when test="dateTypeChoice == 'day'">
+            DATE_FORMAT(STR_TO_DATE(STAT_DT, '%Y%m%d%H'), '%Y-%m-%d') as STAT_DATE,
+            SUM(USE_CNT) as USE_CNT,
+          </when>
+          <when test="dateTypeChoice == 'month'">
+            DATE_FORMAT(STR_TO_DATE(STAT_DT, '%Y%m%d%H'), '%Y-%m') as STAT_DATE,
+            SUM(USE_CNT) as USE_CNT,
+          </when>
+          <otherwise>
+            DATE_FORMAT(STR_TO_DATE(STAT_DT, '%Y%m%d%H'), '%Y-%m-%d     %H') as STAT_DATE,
+            USE_CNT,
+          </otherwise>
+      </choose>
+            SEX,
+            AGE
+       FROM USER_USE_STAT
+      WHERE STAT_DT LIKE CONCAT(#{startDt},'%')
+      <if test="sex != null and sex != ''">
+        AND SEX = #{sex}
+      </if>
+      <if test="age != null and age != ''">
+        AND AGE = #{age}
+      </if>
+      <if test = "dateTypeChoice == 'day' or dateTypeChoice == 'month'">
+      GROUP BY STAT_DATE, SEX, AGE
+      </if>
+      ORDER BY STAT_DATE DESC
+      LIMIT #{firstLimit} , #{lastLimit}
+    </select>
+    
+    <select id="selectLockerStatCount" resultType="int">
+     /* 락커 이용 통계 조회 카운트*/
+     SELECT COUNT(T.STAT_DATE)
+       FROM (
+             SELECT
+              <choose>
+                  <when test="dateTypeChoice == 'day'">
+                    DATE_FORMAT(STR_TO_DATE(A.STAT_DT, '%Y%m%d%H'), '%Y-%m-%d') as STAT_DATE,
+                    SUM(A.USE_CNT) as USE_CNT,
+                  </when>
+                  <when test="dateTypeChoice == 'month'">
+                    DATE_FORMAT(STR_TO_DATE(A.STAT_DT, '%Y%m%d%H'), '%Y-%m') as STAT_DATE,
+                    SUM(A.USE_CNT) as USE_CNT,
+                  </when>
+                  <otherwise>
+                    DATE_FORMAT(STR_TO_DATE(A.STAT_DT, '%Y%m%d%H'), '%Y-%m-%d %H') as STAT_DATE,
+                    A.USE_CNT,
+                  </otherwise>
+              </choose>
+                    B.CODE_NM,
+                    B.LOCKER_NO
+               FROM LOCKER_USE_STAT A 
+               JOIN (SELECT 
+                            B1.LOCKER_ID, 
+                            B1.LOCKER_NO, 
+                            B2.CODE_NM
+                       FROM LOCKER_INFO B1 
+                       JOIN CODE_INFO B2
+                         ON B1.LOCKER_TYPE_CD = B2.CODE
+                        <if test="lockerType != null and lockerType != ''">
+                        AND B1.LOCKER_TYPE_CD = #{lockerType}
+                        </if>
+                    ) B
+                 ON A.LOCKER_ID = B.LOCKER_ID
+              WHERE A.STAT_DT LIKE CONCAT(#{startDt},'%')
+              <if test = "dateTypeChoice == 'day' or dateTypeChoice == 'month'">
+              GROUP BY STAT_DATE, CODE_NM, LOCKER_NO
+              </if>
+               ) T
+    </select>
+    
+    <select id="selectLockerStat" resultType="hashmap">
+     /* 락커 이용 통계 조회*/
+     SELECT
+      <choose>
+          <when test="dateTypeChoice == 'day'">
+            DATE_FORMAT(STR_TO_DATE(A.STAT_DT, '%Y%m%d%H'), '%Y-%m-%d') as STAT_DATE,
+            SUM(A.USE_CNT) as USE_CNT,
+          </when>
+          <when test="dateTypeChoice == 'month'">
+            DATE_FORMAT(STR_TO_DATE(A.STAT_DT, '%Y%m%d%H'), '%Y-%m') as STAT_DATE,
+            SUM(A.USE_CNT) as USE_CNT,
+          </when>
+          <otherwise>
+            DATE_FORMAT(STR_TO_DATE(A.STAT_DT, '%Y%m%d%H'), '%Y-%m-%d      %H') as STAT_DATE,
+            A.USE_CNT,
+          </otherwise>
+      </choose>
+            B.CODE_NM,
+            B.LOCKER_NO
+       FROM LOCKER_USE_STAT A 
+       JOIN (SELECT 
+                    B1.LOCKER_ID, 
+                    B1.LOCKER_NO, 
+                    B2.CODE_NM
+               FROM LOCKER_INFO B1 
+               JOIN CODE_INFO B2
+                 ON B1.LOCKER_TYPE_CD = B2.CODE
+                <if test="lockerType != null and lockerType != ''">
+                AND B1.LOCKER_TYPE_CD = #{lockerType}
+                </if>
+            ) B
+         ON A.LOCKER_ID = B.LOCKER_ID
+      WHERE A.STAT_DT LIKE CONCAT(#{startDt},'%')
+      <if test = "dateTypeChoice == 'day' or dateTypeChoice == 'month'">
+      GROUP BY STAT_DATE, CODE_NM, LOCKER_NO
+      </if>
+      ORDER BY STAT_DATE DESC
+      LIMIT #{firstLimit} , #{lastLimit}
+    </select>
+    
+    <select id="selectHourlyUseUserCount" resultType="hashmap">
+    /* 시간별 이용현황(그래프)*/
+    SELECT DATE_FORMAT(STR_TO_DATE(STAT_DT, '%Y%m%d%H'), '%H') as STAT_DATE,
+           SUM(USE_CNT) as CNT,
+           SEX
+      FROM USER_USE_STAT
+     WHERE STAT_DT LIKE CONCAT(#{searchDay}, '%') 
+     GROUP BY STAT_DATE, SEX
+    </select>
+
+
+    <select id="selectDailyUseUserCount" resultType="hashmap">
+    /* 일별 이용현황(그래프)*/
+        SELECT DATE_FORMAT(STR_TO_DATE(STAT_DT, '%Y%m%d%H'), '%d') as STAT_DATE,
+           SUM(USE_CNT) as CNT,
+           SEX
+      FROM USER_USE_STAT
+     WHERE STAT_DT LIKE CONCAT(#{searchMonth}, '%') 
+     GROUP BY STAT_DATE, SEX
+    </select>
+    
+    <select id="selectTodayChkInAndOutCount" resultType="hashmap">
+    /* 현재시각 까지의 체크인 , 체크아웃 총 카운트 */
+    SELECT COUNT(IF(ACT_CD = '300001' , ACT_CD, NULL)) as CHC_IN,
+           COUNT(IF(ACT_CD = '300004' , ACT_CD, NULL)) as CHC_OUT
+      FROM USER_HIST
+     WHERE ACT_DT BETWEEN #{startDt} AND #{endDt}
+    </select>
+    
+</mapper>

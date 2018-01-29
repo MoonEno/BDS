@@ -1,0 +1,483 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="user">
+
+    <select id="selectCodeList" resultType="hashmap">
+        /* 코드 목록 조회 */
+        SELECT
+               CODE,
+               CODE_NM
+          FROM CODE_INFO
+         WHERE GROUP_CD = #{groupCd}
+         ORDER BY ORDER_NO
+    </select>
+
+    <select id="selectUserBasList" resultType="hashmap">
+        /* 종목 목록 조회 */
+        SELECT
+               BAS_CD,
+               BAS_NM
+          FROM USER_INFO
+         GROUP BY BAS_CD
+    </select>
+
+    <select id="selectUserListCount" resultType="int">
+        /* 회원 목록 조회 */
+        SELECT 
+               COUNT(A.USER_ID)
+          FROM USER_INFO A
+          LEFT OUTER JOIN
+               (
+                SELECT
+                       A.USER_ID,
+                       GROUP_CONCAT(IF(B.LOCKER_TYPE_CD = #{lockerType1}, LOCKER_NO, NULL)) AS LOCKER_NO1,
+                       GROUP_CONCAT(IF(B.LOCKER_TYPE_CD = #{lockerType2}, LOCKER_NO, NULL)) AS LOCKER_NO2
+                  FROM USER_LOCKER A,
+                       LOCKER_INFO B
+                 WHERE A.LOCKER_ID = B.LOCKER_ID
+                 GROUP BY A.USER_ID
+               ) B
+            ON A.USER_ID = B.USER_ID
+           <where>
+           <if test="basCd != null and basCd != ''">
+           AND A.BAS_CD = #{basCd}
+           </if>
+           <if test="state == 'using'">
+           AND B.STATE IS NOT NULL
+           </if>
+           <if test="state == 'wating'">
+           AND B.STATE IS NULL
+           </if>
+           <if test="keyword != null and keyword != ''">
+           AND (
+                A.USER_ID LIKE CONCAT('%', #{keyword}, '%') OR
+                A.USER_NAME LIKE CONCAT('%', #{keyword}, '%') OR
+                A.EMP_NO LIKE CONCAT('%', #{keyword}, '%')
+               )
+           </if>
+           </where>
+    </select>
+    
+    <select id="selectUserList" resultType="hashmap">
+        /* 회원 목록 조회 */
+        SELECT
+               A.USER_ID,
+               A.USER_NAME,
+               A.EMP_NO,
+               A.BAS_NM,
+               A.IN_CNT,
+               DATE_FORMAT(A.LAST_ENTER_DT, '%Y-%m-%d %H:%i:%s') AS LAST_ENTER_DT,
+               DATE_FORMAT(A.LAST_EXIT_DT, '%Y-%m-%d %H:%i:%s') AS LAST_EXIT_DT,
+               B.STATE,
+               B.LOCKER_NO1,
+               B.LOCKER_NO2
+          FROM USER_INFO A
+          LEFT OUTER JOIN
+               (
+                SELECT
+                       A.USER_ID,
+                       IF(A.STATE_CD = #{stateCd}, 'B', 'T') AS STATE,
+                       GROUP_CONCAT(IF(B.LOCKER_TYPE_CD = #{lockerType1}, LOCKER_NO, NULL)) AS LOCKER_NO1,
+                       GROUP_CONCAT(IF(B.LOCKER_TYPE_CD = #{lockerType2}, LOCKER_NO, NULL)) AS LOCKER_NO2
+                  FROM USER_LOCKER A,
+                       LOCKER_INFO B
+                 WHERE A.LOCKER_ID = B.LOCKER_ID
+                 GROUP BY A.USER_ID
+               ) B
+            ON A.USER_ID = B.USER_ID
+           <where>
+           <if test="basCd != null and basCd != ''">
+           AND A.BAS_CD = #{basCd}
+           </if>
+           <if test="state == 'using'">
+           AND B.STATE IS NOT NULL
+           </if>
+           <if test="state == 'wating'">
+           AND B.STATE IS NULL
+           </if>
+           <if test="keyword != null and keyword != ''">
+           AND (
+                A.USER_ID LIKE CONCAT('%', #{keyword}, '%') OR
+                A.USER_NAME LIKE CONCAT('%', #{keyword}, '%') OR
+                A.EMP_NO LIKE CONCAT('%', #{keyword}, '%')
+               )
+           </if>
+           </where>
+         ORDER BY A.USER_ID
+         LIMIT #{firstLimit}, #{lastLimit}
+    </select>
+    
+    <update id="updateUserCfc">
+        /* 회원 갱신 */
+        INSERT INTO USER_INFO (
+               USER_ID,
+               USER_NAME,
+               EMP_NO,
+               BAS_CD,
+               BAS_NM,
+               SEX,
+               AGE,
+               IN_CNT,
+               CELL_NO,
+               REG_USER,
+               REG_DT
+        ) VALUES (
+               #{userId},
+               #{userName},
+               #{empNo},
+               #{basCd},
+               #{basName},
+               #{genderYn},
+               #{age},
+               #{inCnt},
+               #{cellNo},
+               #{sessAdminId},
+               NOW()
+        ) ON DUPLICATE KEY
+        UPDATE
+               USER_NAME = #{userName},
+               BAS_CD = #{basCd},
+               BAS_NM = #{basName},
+               AGE = #{age},
+               IN_CNT = #{inCnt},
+               CELL_NO = #{cellNo},
+               UPDT_USER = #{sessAdminId},
+               UPDT_DT = NOW()
+    </update>
+    
+    <select id="selectUser" resultType="hashmap">
+        /* 회원 조회 */
+        SELECT 
+               A.USER_ID,
+               A.USER_NAME,
+               A.EMP_NO,
+               A.BAS_CD,
+               A.BAS_NM,
+               A.SEX,
+               A.IN_CNT,
+               A.CELL_NO,
+               A.MEMO,
+               B.STATE,
+               B.LOCKER_ID1,
+               B.LOCKER_NO1,
+               B.LOCKER_ID2,
+               B.LOCKER_NO2
+          FROM USER_INFO A
+          LEFT OUTER JOIN
+               (
+                SELECT
+                       A.USER_ID,
+                       IF(A.STATE_CD = #{stateCd}, 'B', 'T') AS STATE,
+                       GROUP_CONCAT(IF(B.LOCKER_TYPE_CD = #{lockerType1}, B.LOCKER_ID, NULL)) AS LOCKER_ID1,
+                       GROUP_CONCAT(IF(B.LOCKER_TYPE_CD = #{lockerType1}, B.LOCKER_NO, NULL)) AS LOCKER_NO1,
+                       GROUP_CONCAT(IF(B.LOCKER_TYPE_CD = #{lockerType2}, B.LOCKER_ID, NULL)) AS LOCKER_ID2,
+                       GROUP_CONCAT(IF(B.LOCKER_TYPE_CD = #{lockerType2}, B.LOCKER_NO, NULL)) AS LOCKER_NO2
+                  FROM USER_LOCKER A,
+                       LOCKER_INFO B
+                 WHERE A.LOCKER_ID = B.LOCKER_ID
+                   AND A.USER_ID = #{userId}
+               ) B
+            ON A.USER_ID = B.USER_ID
+         WHERE A.USER_ID = #{userId}
+    </select>
+    
+    <select id="selectUserDeviceList" resultType="hashmap">
+        /* 회원 디바이스 목록 조회 */
+        SELECT 
+               A.UID,
+               A.DEVICE_TYPE_CD,
+               C.CODE_NM AS DEVICE_TYPE_NM,
+               A.DEVICE_ID
+          FROM DEVICE_INFO A,
+               USER_DEVICE B,
+               CODE_INFO C
+         WHERE A.UID = B.UID
+           AND A.DEVICE_TYPE_CD = C.CODE
+           AND B.USER_ID = #{userId}
+         ORDER BY C.ORDER_NO
+    </select>
+    
+    <select id="selectLockerList" resultType="hashmap">
+        /* 락커 목록 조회 */
+        SELECT
+               A.LOCKER_ID,
+               A.LOCKER_NO
+          FROM LOCKER_INFO A
+          LEFT OUTER JOIN
+               (
+                SELECT LOCKER_ID
+                  FROM USER_LOCKER
+                 UNION ALL
+                SELECT LOCKER_ID
+                  FROM TICKET_LOCKER
+               ) B
+            ON A.LOCKER_ID = B.LOCKER_ID
+         WHERE B.LOCKER_ID IS NULL
+           AND A.LOCKER_TYPE_CD = #{lockerTypeCd}
+         ORDER BY A.LOCKER_NO
+    </select>
+    
+    <select id="selectDeviceList" resultType="hashmap">
+        /* 디바이스 목록 조회 */
+        SELECT
+               A.UID,
+               C.CODE_NM AS DEVICE_TYPE_NM,
+               A.DEVICE_ID
+          FROM DEVICE_INFO A
+          LEFT OUTER JOIN
+               USER_DEVICE B
+            ON A.UID = B.UID
+          JOIN
+               CODE_INFO C
+            ON A.DEVICE_TYPE_CD = C.CODE
+         WHERE B.UID IS NULL
+         ORDER BY A.UID
+    </select>
+
+    <select id="selectUserLockerState" resultType="hashmap">
+        /* 회원 락커 상태 조회 */
+        SELECT
+               LOCKER_ID,
+               UID,
+               STATE_CD
+          FROM USER_LOCKER
+         WHERE USER_ID = #{userId}
+    </select>
+
+    <delete id="deleteUserLocker">
+        /* 회원 락커 삭제 */
+        DELETE
+          FROM USER_LOCKER
+         WHERE USER_ID = #{userId}
+    </delete>
+
+    <delete id="deleteUser">
+        /* 회원 삭제 */
+        DELETE
+               A.*,
+               B.*
+          FROM USER_INFO A
+          LEFT OUTER JOIN
+               USER_DEVICE B
+            ON A.USER_ID = B.USER_ID
+         WHERE A.USER_ID = #{userId}
+    </delete>
+
+    <insert id="insertUserHist">
+        /* 회원 이력 등록 */
+        INSERT INTO USER_HIST (
+               USER_ID,
+               UID,
+               ACT_CD,
+               ACT_DT
+        ) VALUES (
+               #{userId},
+               #{uid},
+               #{actCd},
+               NOW()
+        )
+    </insert>
+    
+    <update id="updateUserExit">
+        /* 회원 퇴장 일시 수정 */
+        UPDATE USER_INFO
+           SET LAST_EXIT_DT = NOW()
+         WHERE USER_ID = #{userId}
+    </update>
+
+    <select id="checkLocker" resultType="int">
+        /* 락커 사용 여부 */
+        SELECT
+               COUNT(A.LOCKER_ID)
+          FROM (
+                SELECT LOCKER_ID
+                  FROM USER_LOCKER
+                 UNION ALL
+                SELECT LOCKER_ID
+                  FROM TICKET_LOCKER
+               ) A
+         WHERE A.LOCKER_ID = #{newLockerId}
+    </select>
+
+    <select id="selectUserLocker" resultType="hashmap">
+        /* 회원 락커 조회 */
+        SELECT
+               UID,
+               PASSWORD,
+               STATE_CD
+          FROM USER_LOCKER
+         WHERE LOCKER_ID = #{lockerId}
+    </select>
+
+    <update id="changeUserLocker">
+        /* 회원 락커 변경 */
+        UPDATE USER_LOCKER
+           SET LOCKER_ID = #{newLockerId},
+               UPDT_DT = NOW()
+         WHERE USER_ID = #{userId}
+           AND LOCKER_ID = #{lockerId}
+    </update>
+
+    <update id="updateUser">
+        /* 회원 수정 */
+        UPDATE USER_INFO
+           SET USER_NAME = #{userName},
+               EMP_NO = #{empNo},
+               BAS_CD = #{basCd},
+               BAS_NM = #{basNm},
+               SEX = #{sex},
+               CELL_NO = #{cellNo},
+               MEMO = #{memo},
+               UPDT_USER = #{sessAdminId},
+               UPDT_DT = NOW()
+         WHERE USER_ID = #{userId}
+    </update>
+
+    <select id="checkCellNo" resultType="string">
+        /* 휴대폰번호 중복 확인 */
+        SELECT
+               USER_ID
+          FROM USER_INFO
+         WHERE CELL_NO = #{cellNo}
+    </select>
+
+    <select id="checkUserId" resultType="int">
+        /* 회원 아이디 중복 확인 */
+        SELECT
+               COUNT(USER_ID)
+          FROM USER_INFO
+         WHERE USER_ID = #{userId}
+    </select>
+
+    <insert id="insertUser">
+        /* 회원 등록 */
+        INSERT INTO USER_INFO (
+               USER_ID,
+               USER_NAME,
+               EMP_NO,
+               BAS_CD,
+               BAS_NM,
+               SEX,
+               AGE,
+               IN_CNT,
+               CELL_NO,
+               MEMO,
+               REG_USER,
+               REG_DT
+        ) VALUES (
+               #{userId},
+               #{userName},
+               #{empNo},
+               #{basCd},
+               #{basNm},
+               #{sex},
+               #{age},
+               0,
+               #{cellNo},
+               #{memo},
+               #{sessAdminId},
+               NOW()
+        )
+    </insert>
+
+    <insert id="insertUserDeviceList">
+        /* 회원 디바이스 목록 등록 */
+        INSERT INTO USER_DEVICE (
+               USER_ID,
+               UID,
+               REG_USER,
+               REG_DT
+        )
+        SELECT
+               #{userId},
+               A.UID,
+               #{sessAdminId},
+               NOW()
+          FROM DEVICE_INFO A
+          LEFT OUTER JOIN
+               USER_DEVICE B
+            ON A.UID = B.UID
+         WHERE A.UID IN 
+         <foreach collection="addList" separator="," open="(" close=")" item="uid">
+         #{uid}
+         </foreach>
+           AND B.UID IS NULL
+    </insert>
+
+    <delete id="deleteUserDeviceList">
+        /* 회원 디바이스 목록 삭제 */
+        DELETE
+          FROM USER_DEVICE
+         WHERE USER_ID = #{userId}
+           AND UID IN 
+         <foreach collection="delList" separator="," open="(" close=")" item="uid">
+         #{uid}
+         </foreach>
+    </delete>
+
+    <select id="selectUserHistListCount" resultType="int">
+        /* 회원 이력 목록 조회 */
+        SELECT 
+               COUNT(A.USER_ID)
+          FROM USER_INFO A
+          JOIN 
+               USER_HIST B
+            ON A.USER_ID = B.USER_ID
+          LEFT OUTER JOIN
+               DEVICE_INFO C
+            ON B.UID = C.UID
+          LEFT OUTER JOIN
+               LOCKER_INFO D
+            ON B.LOCKER_ID = D.LOCKER_ID
+         WHERE A.USER_ID = #{userId}
+           AND B.ACT_DT > #{startDt}
+           <![CDATA[
+           AND B.ACT_DT <= CONCAT(#{endDt}, '235959')
+           ]]>
+           <if test="actCd != null and actCd != ''">
+           AND B.ACT_CD = #{actCd}
+           </if>
+           <if test="keyword != null and keyword != ''">
+           AND C.DEVICE_ID LIKE CONCAT('%', #{keyword}, '%')
+           </if>
+    </select>
+    
+    <select id="selectUserHistList" resultType="hashmap">
+        /* 회원 이력 목록 조회 */
+        SELECT 
+               A.USER_ID,
+               A.USER_NAME,
+               A.EMP_NO,
+               C.DEVICE_ID,
+               (SELECT CODE_NM FROM CODE_INFO WHERE CODE = C.DEVICE_TYPE_CD) AS DEVICE_TYPE_NM,
+               D.LOCKER_NO,
+               (SELECT CODE_NM FROM CODE_INFO WHERE CODE = D.LOCKER_TYPE_CD) AS LOCKER_TYPE_NM,
+               (SELECT CODE_NM FROM CODE_INFO WHERE CODE = B.ACT_CD) AS ACT_NM,
+               DATE_FORMAT(B.ACT_DT, '%Y-%m-%d %H:%i:%s') AS ACT_DT
+          FROM USER_INFO A
+          JOIN 
+               USER_HIST B
+            ON A.USER_ID = B.USER_ID
+          LEFT OUTER JOIN
+               DEVICE_INFO C
+            ON B.UID = C.UID
+          LEFT OUTER JOIN
+               LOCKER_INFO D
+            ON B.LOCKER_ID = D.LOCKER_ID
+         WHERE A.USER_ID = #{userId}
+           AND B.ACT_DT > #{startDt}
+           <![CDATA[
+           AND B.ACT_DT <= CONCAT(#{endDt}, '235959')
+           ]]>
+           <if test="actCd != null and actCd != ''">
+           AND B.ACT_CD = #{actCd}
+           </if>
+           <if test="keyword != null and keyword != ''">
+           AND C.DEVICE_ID LIKE CONCAT('%', #{keyword}, '%')
+           </if>
+         ORDER BY ACT_DT DESC, ACT_CD DESC
+         LIMIT #{firstLimit}, #{lastLimit}
+    </select>
+    
+</mapper>

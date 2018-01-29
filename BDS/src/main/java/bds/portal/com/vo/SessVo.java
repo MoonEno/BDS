@@ -5,9 +5,9 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 
 /**
  * 로그인한 관리자 VO
- * 
- * @author openit
- * @created 2017. 11. 1.
+ *
+ * @author ihmoon
+ * @created 2018. 01. 26.
  */
 public class SessVo {
 

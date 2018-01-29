@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="device">
+
+    <select id="selectDeviceListCount" resultType="int">
+        /* 디바이스 목록 조회 */
+        SELECT
+               COUNT(A.UID)
+          FROM DEVICE_INFO A
+          LEFT OUTER JOIN
+               (
+                SELECT
+                       C.UID,
+                       D.USER_NAME
+                  FROM USER_DEVICE C,
+                       USER_INFO D
+                 WHERE C.USER_ID = D.USER_ID
+               ) B
+            ON A.UID = B.UID
+           <where>
+           <if test="deviceTypeCd != null and deviceTypeCd != ''">
+           AND A.DEVICE_TYPE_CD = #{deviceTypeCd}
+           </if>
+           <if test="state == 'using'">
+           AND B.UID IS NOT NULL
+           </if>
+           <if test="state == 'wating'">
+           AND B.UID IS NULL
+           </if>
+           <if test="keyword != null and keyword != ''">
+           AND (
+                A.DEVICE_ID LIKE CONCAT('%', #{keyword}, '%') OR
+                B.USER_NAME LIKE CONCAT('%', #{keyword}, '%')
+               )
+           </if>
+           </where>
+    </select>
+    
+    <select id="selectDeviceList" resultType="hashmap">
+        /* 디바이스 목록 조회 */
+        SELECT
+               A.UID,
+               A.DEVICE_TYPE_CD,
+               (SELECT CODE_NM FROM CODE_INFO WHERE CODE = A.DEVICE_TYPE_CD) AS DEVICE_TYPE_NM,
+               A.DEVICE_ID,
+               A.MAJOR_ID,
+               A.MINOR_ID,
+               B.USER_NAME,
+               (
+                SELECT DATE_FORMAT(ACT_DT, '%Y%m%d%H%i%s')
+                  FROM USER_HIST WHERE UID = A.UID
+                 ORDER BY ACT_DT DESC
+                 LIMIT 1
+               ) AS LAST_USE_DT
+          FROM DEVICE_INFO A
+          LEFT OUTER JOIN
+               (
+                SELECT
+                       C.UID,
+                       D.USER_NAME
+                  FROM USER_DEVICE C,
+                       USER_INFO D
+                 WHERE C.USER_ID = D.USER_ID
+               ) B
+            ON A.UID = B.UID
+           <where>
+           <if test="deviceTypeCd != null and deviceTypeCd != ''">
+           AND A.DEVICE_TYPE_CD = #{deviceTypeCd}
+           </if>
+           <if test="state == 'using'">
+           AND B.UID IS NOT NULL
+           </if>
+           <if test="state == 'wating'">
+           AND B.UID IS NULL
+           </if>
+           <if test="keyword != null and keyword != ''">
+           AND (
+                A.DEVICE_ID LIKE CONCAT('%', #{keyword}, '%') OR
+                B.USER_NAME LIKE CONCAT('%', #{keyword}, '%')
+               )
+           </if>
+           </where>
+         ORDER BY A.DEVICE_ID
+         LIMIT #{firstLimit}, #{lastLimit}
+    </select>
+    
+    <insert id="insertDevice">
+        /* 디바이스 등록 */
+        INSERT INTO DEVICE_INFO (
+               UID,
+               DEVICE_TYPE_CD,
+               DEVICE_ID,
+               MAJOR_ID,
+               MINOR_ID,
+               REG_USER,
+               REG_DT
+        ) VALUES (
+               #{uid},
+               #{deviceTypeCd},
+               #{deviceId},
+               #{majorId},
+               #{minorId},
+               #{sessAdminId},
+               NOW()
+        )
+    </insert>
+    
+    <select id="checkDevice" resultType="int">
+        /* 디바이스 사용 여부 */
+        SELECT COUNT(UID)
+          FROM USER_DEVICE
+         WHERE UID = #{uid}
+    </select>
+    
+    <delete id="deleteDevice">
+        /* 디바이스 삭제 */
+        DELETE
+          FROM DEVICE_INFO
+         WHERE UID = #{uid}
+    </delete>
+    
+    <update id="updateDevice">
+        /* 디바이스 수정 */
+        UPDATE DEVICE_INFO
+           SET DEVICE_TYPE_CD = #{deviceTypeCd},
+               DEVICE_ID = #{deviceId},
+               MAJOR_ID = #{majorId},
+               MINOR_ID = #{minorId},
+               UPDT_USER = #{sessAdminId},
+               UPDT_DT = NOW()
+         WHERE UID = #{uid}
+    </update>
+</mapper>

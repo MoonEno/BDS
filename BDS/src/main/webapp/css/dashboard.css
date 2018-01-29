@@ -1,0 +1,18 @@
+@charset "utf-8";
+.chartContents {margin-top:5%; text-align: center; border: solid 1px #D6CFC5; padding:20px 0px;}
+.chart {display: inline-block;}
+.chartDesc .userCount tbody .totalUserCnt {background-color: #D6CFC5;}
+.chartDesc .userCount tbody td:first-child {border-bottom: solid 1px white;}
+.chartDesc .userCount tbody td:last-child {background-color: white;}
+.userCount { width:100%; border: solid 1px #D6CFC5; }
+.userCount td {border-bottom: solid 1px #D6CFC5; text-align: center;  padding:7px 10px;}
+.userCount th {
+    width:120px;
+    color:#524337;
+    background: #F3F0EC;
+    font-weight: 400;
+    font-size:13px;
+    padding:7px 10px 7px 10px;
+    border-bottom: solid 1px #D6CFC5;
+}
+.datePicker_search_btn { display: inline-block; padding: 8px; background: #bab1a6; color:#fff; font-size:13px; border-radius: 2px; text-align:center;}

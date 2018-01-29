@@ -19,9 +19,9 @@ import bds.portal.com.vo.SessVo;
 
 /**
  * session 추가
- * 
- * @author openit
- * @created 2017. 11. 1.
+ *
+ * @author ihmoon
+ * @created 2018. 01. 15.
  */
 public class SessResolver implements HandlerMethodArgumentResolver {
 

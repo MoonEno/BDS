@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="locker">
+
+    <select id="selectLockerListCount" resultType="int">
+        /* 락커 목록 조회 */
+        SELECT
+               COUNT(A.LOCKER_ID)
+          FROM LOCKER_INFO A
+          LEFT OUTER JOIN
+               (
+                SELECT B.USER_NAME,
+                       A.LOCKER_ID,
+                       A.STATE_CD,
+                       A.UPDT_DT
+                  FROM USER_LOCKER A,
+                       USER_INFO B
+                 WHERE A.USER_ID = B.USER_ID
+                 UNION ALL
+                SELECT NULL AS USER_NAME,
+                       LOCKER_ID,
+                       STATE_CD,
+                       UPDT_DT
+                  FROM TICKET_LOCKER
+               ) B
+            ON A.LOCKER_ID = B.LOCKER_ID
+           <where>
+           <if test="lockerTypeCd != null and lockerTypeCd != ''">
+           AND A.LOCKER_TYPE_CD = #{lockerTypeCd}
+           </if>
+           <if test="state == 'using'">
+           AND B.STATE_CD IS NOT NULL
+           </if>
+           <if test="state == 'wating'">
+           AND B.STATE_CD IS NULL
+           </if>
+           <if test="keyword != null and keyword != ''">
+           AND (
+                A.LOCKER_NO LIKE CONCAT('%', #{keyword}, '%') OR
+                B.USER_NAME LIKE CONCAT('%', #{keyword}, '%')
+               )
+           </if>
+           </where>
+    </select>
+    
+    <select id="selectLockerList" resultType="hashmap">
+        /* 락커 목록 조회 */
+        SELECT
+               A.LOCKER_ID,
+               A.LOCKER_NO,
+               A.LOCKER_TYPE_CD,
+               (SELECT CODE_NM FROM CODE_INFO WHERE CODE = A.LOCKER_TYPE_CD) AS LOCKER_TYPE_NM,
+               A.PRIORITY,
+               B.USER_NAME,
+               B.STATE_CD,
+               (SELECT CODE_NM FROM CODE_INFO WHERE CODE = B.STATE_CD) AS STATE_NM,
+               DATE_FORMAT(B.UPDT_DT, '%Y-%m-%d %H:%i:%s') AS UPDT_DT
+          FROM LOCKER_INFO A
+          LEFT OUTER JOIN
+               (
+                SELECT B.USER_NAME,
+                       A.LOCKER_ID,
+                       A.STATE_CD,
+                       A.UPDT_DT
+                  FROM USER_LOCKER A,
+                       USER_INFO B
+                 WHERE A.USER_ID = B.USER_ID
+                 UNION ALL
+                SELECT NULL AS USER_NAME,
+                       LOCKER_ID,
+                       STATE_CD,
+                       UPDT_DT
+                  FROM TICKET_LOCKER
+               ) B
+            ON A.LOCKER_ID = B.LOCKER_ID
+           <where>
+           <if test="lockerTypeCd != null and lockerTypeCd != ''">
+           AND A.LOCKER_TYPE_CD = #{lockerTypeCd}
+           </if>
+           <if test="state == 'using'">
+           AND B.STATE_CD IS NOT NULL
+           </if>
+           <if test="state == 'wating'">
+           AND B.STATE_CD IS NULL
+           </if>
+           <if test="keyword != null and keyword != ''">
+           AND (
+                A.LOCKER_NO LIKE CONCAT('%', #{keyword}, '%') OR
+                B.USER_NAME LIKE CONCAT('%', #{keyword}, '%')
+               )
+           </if>
+           </where>
+         ORDER BY A.LOCKER_TYPE_CD, A.LOCKER_NO, A.LOCKER_ID
+         LIMIT #{firstLimit}, #{lastLimit}
+    </select>
+    
+    <insert id="insertLocker">
+        /* 락커 등록 */
+        INSERT INTO LOCKER_INFO (
+               LOCKER_ID,
+               LOCKER_NO,
+               LOCKER_TYPE_CD,
+               PRIORITY,
+               REG_USER,
+               REG_DT
+        ) VALUES (
+               #{lockerId},
+               #{lockerNo},
+               #{lockerTypeCd},
+               #{priority},
+               #{sessAdminId},
+               NOW()
+        )
+    </insert>
+    
+    <select id="checkLocker" resultType="int">
+        /* 락커 사용 여부 */
+        SELECT COUNT(A.LOCKER_ID)
+          FROM (
+                SELECT LOCKER_ID
+                  FROM USER_LOCKER
+                 WHERE LOCKER_ID = #{lockerId}
+                   <if test="stateCd != null and stateCd != ''">
+                   AND STATE_CD != #{stateCd}
+                   </if>
+                 UNION ALL
+                SELECT LOCKER_ID
+                  FROM TICKET_LOCKER
+                 WHERE LOCKER_ID = #{lockerId}
+                   <if test="stateCd != null and stateCd != ''">
+                   AND STATE_CD != #{stateCd}
+                   </if>
+               ) A
+    </select>
+    
+    <delete id="deleteLocker">
+        /* 락커 삭제 */
+        DELETE
+          FROM LOCKER_INFO
+         WHERE LOCKER_ID = #{lockerId}
+    </delete>
+    
+    <update id="updateLocker">
+        /* 락커 수정 */
+        UPDATE LOCKER_INFO
+           SET LOCKER_NO = #{lockerNo},
+               LOCKER_TYPE_CD = #{lockerTypeCd},
+               PRIORITY = #{priority},
+               UPDT_USER = #{sessAdminId},
+               UPDT_DT = NOW()
+         WHERE LOCKER_ID = #{lockerId}
+    </update>
+</mapper>
