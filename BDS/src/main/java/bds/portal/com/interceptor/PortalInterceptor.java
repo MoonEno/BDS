@@ -13,8 +13,8 @@ import bds.portal.com.vo.SessVo;
 /**
  * 권한 확인
  *
- * @author openit
- * @created 2017. 11. 1.
+ * @author ihmoon
+ * @created 2018. 01. 15.
  */
 public class PortalInterceptor extends HandlerInterceptorAdapter {
 

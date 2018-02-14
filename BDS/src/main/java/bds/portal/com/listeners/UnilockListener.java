@@ -10,8 +10,8 @@ import bds.portal.com.utils.UnilockUtils;
 /**
  * unilock listener
  *
- * @author openit
- * @created 2017. 11. 1.
+ * @author ihmoon
+ * @created 2018. 01. 16.
  */
 public class UnilockListener implements Runnable {
 

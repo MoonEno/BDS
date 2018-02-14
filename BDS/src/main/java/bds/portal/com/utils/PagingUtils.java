@@ -9,9 +9,9 @@ import org.apache.ibatis.session.SqlSession;
 
 /**
  * web에서 사용되는 paging과 관련된 유틸을 제공한다.
- * 
- * @author openit
- * @created 2017. 11. 1.
+ *
+ * @author ihmoon
+ * @created 2018. 02. 01.
  */
 public final class PagingUtils {
 

@@ -23,7 +23,7 @@
 
         <!-- 팝업 콘텐츠 -->
         <div class="pop_container">
-
+ 
             <!-- 점수내역 -->
             <table class="list_search">
                 <colgroup>

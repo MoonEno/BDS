@@ -11,8 +11,8 @@ import bds.portal.com.utils.UnilockUtils;
 /**
  * WAS 실행시 기동되는 listener
  *
- * @author openit
- * @created 2017. 11. 1.
+ * @author ihmoon
+ * @created 2018. 01. 15.
  */
 public class PortalListener implements ServletContextListener {
 
